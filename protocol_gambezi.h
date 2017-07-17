@@ -1,0 +1,6 @@
+#ifndef PROTOCOL_GAMBEZI_H
+#define PROTOCOL_GAMBEZI_H
+
+#define BUFFER_LENGTH 1024
+
+#endif
