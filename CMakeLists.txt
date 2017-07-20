@@ -19,7 +19,7 @@ set(VERSION "0.1")
 
 set(PLUGIN_NAME "protocol_gambezi")
 # space-separated list of sources
-set(PLUGIN_SRCS protocol_gambezi.c node.c action.c)
+set(PLUGIN_SRCS protocol_gambezi.c node.c action.c gambezi_generator.c)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 

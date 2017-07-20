@@ -6,6 +6,7 @@
 #include "node.h"
 #include "action.h"
 #include "protocol_gambezi.h"
+#include "gambezi_generator.h"
 
 struct per_vhost_data_gambezi
 {
@@ -45,7 +46,10 @@ callback_gambezi(struct lws *wsi,
 			                                  sizeof(struct per_vhost_data_gambezi));
 
 			// Init data holders
-			vhd->root_node = node_init("");
+			uint8_t root_data[1];
+			root_data[0] = 0;
+			vhd->root_node = node_init(root_data, root_data, 0);
+			vhd->root_node->key[0] = 0;
 			break;
 		}
 
@@ -94,38 +98,61 @@ callback_gambezi(struct lws *wsi,
 		// Data from client
 		case LWS_CALLBACK_RECEIVE:
 		{
-			const uint8_t* data = (const uint8_t*)in;
+			uint8_t* data = (uint8_t*)in;
 			switch(data[0])
 			{
 				// Client requested key ID
 				case 0:
 				{
 					// Get the ID
-					const uint8_t* parent_key = data + 1;
-					const uint8_t* name = data + parent_key[0] + 2;
-					uint8_t id = node_get_id(vhd->root_node,
-					                         parent_key,
-					                         name);
+					uint8_t* parent_key;
+					uint8_t* name;
+					readIDRequestPacket(data, &parent_key, &name);
+					struct Node* node = get_node_with_id(vhd->root_node,
+					                                     parent_key,
+					                                     name);
 
 					// Queue and generate the response
 					struct Action* action = addAction(&(pss->actions));
 					action->type = PregeneratedRequest;
 					uint8_t* buffer = action->action.pregeneratedRequest.buffer + LWS_PRE;
-					int length = 0;
-					// Packet header
-					buffer[length++] = 0x00;
-					// Key
-					memcpy(buffer + length, parent_key, parent_key[0] + 1);
-					(buffer + length)[0]++;
-					(buffer + length)[(buffer + length)[0]] = id;
-					length += parent_key[0] + 2;
-					// Name
-					memcpy(buffer + length, name, name[0] + 1);
-					length += name[0] + 1;
+					int length = writeIDResponsePacket(buffer, BUFFER_LENGTH, node);
 					action->action.pregeneratedRequest.length = length;
 
 					// Request callback to write to client
 					lws_callback_on_writable(wsi);
+
+					break;
+				}
+				// Client set key value
+				case 1:
+				{
+					uint8_t* key;
+					uint16_t length;
+					uint8_t* value;
+					readValueSetPacket(data, &key, &length, &value);
+					struct Node* node = node_traverse(vhd->root_node, key);
+					node_set_value(node, value, length);
+					break;
+				}
+				// Client request node value
+				case 4:
+				{
+					uint8_t* key;
+					uint8_t get_children;
+					readValueRequestPacket(data, &key, &get_children);
+					struct Node* node = node_traverse(vhd->root_node, key);
+
+					// Queue and generate the response
+					struct Action* action = addAction(&(pss->actions));
+					action->type = PregeneratedRequest;
+					uint8_t* buffer = action->action.pregeneratedRequest.buffer + LWS_PRE;
+					int length = writeValueResponsePacket(buffer, BUFFER_LENGTH, node);
+					action->action.pregeneratedRequest.length = length;
+
+					// Request callback to write to client
+					lws_callback_on_writable(wsi);
+
 
 					break;
 				}
