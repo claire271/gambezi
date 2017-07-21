@@ -7,27 +7,26 @@
 
 #define MAX_ACTIONS 8
 
-struct KeyRequest
-{
-	uint8_t name[MAX_NAME_LENGTH];
-	uint8_t key[MAX_KEY_LENGTH];
-};
-
 struct PregeneratedRequest
 {
 	uint8_t buffer[LWS_PRE + BUFFER_LENGTH];
 	int length;
 };
 
+struct DataReturnRequest
+{
+	struct Node* node;
+};
+
 enum ActionType
 {
-	PregeneratedRequest, KeyRequest
+	PregeneratedRequest, DataReturnRequest
 };
 
 union ActionContainer
 {
-	struct KeyRequest keyRequest;
 	struct PregeneratedRequest pregeneratedRequest;
+	struct DataReturnRequest dataReturnRequest;
 };
 
 struct Action

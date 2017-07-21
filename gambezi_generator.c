@@ -45,11 +45,11 @@ int writeValueResponsePacket(uint8_t* buffer, int limit, struct Node* node)
 	memcpy(buffer + length, node->key, node->key[0] + 1);
 	length += node->key[0] + 1;
 	// Length
-	*((uint16_t*)(buffer + length)) = htons(node->current_length);
+	*((uint16_t*)(buffer + length)) = htons(node->current_length - 5);
 	length += 2;
 	// Data
-	memcpy(buffer + length, node->data, node->current_length);
-	length += node->current_length;
+	memcpy(buffer + length, node->data, node->current_length - 5);
+	length += node->current_length - 5;
 
 	return length;
 }

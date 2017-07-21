@@ -89,6 +89,12 @@ callback_gambezi(struct lws *wsi,
 					lws_write(wsi, buffer, length, LWS_WRITE_BINARY);
 					break;
 				}
+				case DataReturnRequest:
+				{
+					struct Node* node = action->action.dataReturnRequest.node;
+					lws_write(wsi, node->buffer, node->current_length, LWS_WRITE_BINARY);
+					break;
+				}
 			}
 
 			break;
@@ -145,14 +151,11 @@ callback_gambezi(struct lws *wsi,
 
 					// Queue and generate the response
 					struct Action* action = addAction(&(pss->actions));
-					action->type = PregeneratedRequest;
-					uint8_t* buffer = action->action.pregeneratedRequest.buffer + LWS_PRE;
-					int length = writeValueResponsePacket(buffer, BUFFER_LENGTH, node);
-					action->action.pregeneratedRequest.length = length;
+					action->type = DataReturnRequest;
+					action->action.dataReturnRequest.node = node;
 
 					// Request callback to write to client
 					lws_callback_on_writable(wsi);
-
 
 					break;
 				}

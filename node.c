@@ -19,21 +19,33 @@ struct Node* node_init(const uint8_t* name, const uint8_t* parent_key, uint8_t i
 	// Assign name
 	memcpy(node->name, name, name[0] + 1);
 
-	// Assign key
-	memcpy(node->key, parent_key, parent_key[0] + 1);
-	node->key[0]++;
-	node->key[node->key[0]] = id;
-
 	// Zero children nodes
 	for(int i = 0;i < MAX_CHILDREN;i++)
 	{
 		node->children[i] = 0;
 	}
 
-	// Set the data
-	node->allocated_length = 0;
-	node->current_length = 0;
-	node->data = 0;
+	// Allocate buffer
+	int key_length = parent_key[0] + 2;
+	int buffer_length = 1 + key_length + 2;
+	node->buffer = malloc(LWS_PRE + buffer_length) + LWS_PRE;
+
+	// Set header
+	node->buffer[0] = 0x01;
+
+	// Set key
+	node->key = node->buffer + 1;
+	memcpy(node->key, parent_key, parent_key[0] + 1);
+	node->key[0]++;
+	node->key[node->key[0]] = id;
+
+	// Set data
+	*((uint16_t*)(node->key + key_length)) = htons(0);
+	node->data = node->key + key_length + 2;
+
+	// Set lengths
+	node->current_length = buffer_length;
+	node->allocated_length = buffer_length;
 
 	return node;
 }
@@ -82,17 +94,35 @@ struct Node* get_node_with_id(struct Node* root_node, const uint8_t* parent_key,
 	return 0;
 }
 
-void node_set_value(struct Node* node, const uint8_t* data, uint16_t length)
+void node_set_value(struct Node* node, const uint8_t* data, uint16_t data_length)
 {
+	// Calculate lengths
+	int key_length = node->key[0] + 1;
+	int buffer_length = 1 + key_length + 2 + data_length;
+
 	// Check if current allocation is large enough
-	if(length > node->allocated_length)
+	if(buffer_length > node->allocated_length)
 	{
-		free(node->data);
-		node->data = malloc(length);
-		node->allocated_length = length;
+		// Allocate buffer
+		uint8_t* buffer = malloc(LWS_PRE + buffer_length) + LWS_PRE;
+
+		// Set header
+		buffer[0] = 0x01;
+
+		// Set key
+		uint8_t* key = buffer + 1;
+		memcpy(key, node->key, node->key[0] + 1);
+
+		// Cleanup and copy pointers
+		free(node->buffer - LWS_PRE);
+		node->buffer = buffer;
+		node->key = key;
+		node->data = key + key_length + 2;
+		node->allocated_length = buffer_length;
 	}
 
 	// Copy data
-	memcpy(node->data, data, length);
-	node->current_length = length;
+	*((uint16_t*)(node->key + key_length)) = htons(data_length);
+	memcpy(node->data, data, data_length);
+	node->current_length = buffer_length;
 }
