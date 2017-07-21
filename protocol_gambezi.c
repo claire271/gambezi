@@ -156,7 +156,7 @@ callback_gambezi(struct lws *wsi,
 					// Unsubscribe
 					else if(refresh_skip = 0xFFFF)
 					{
-
+						node_remove_subscriber(node, pss);
 					}
 					// Update at fixed rate
 					else

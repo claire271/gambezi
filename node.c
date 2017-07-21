@@ -135,29 +135,41 @@ void node_set_value(struct Node* node, const uint8_t* data, uint16_t data_length
 
 int node_add_subscriber(struct Node* node, struct per_session_data_gambezi* pss)
 {
+	// See if the subscription already exists
 	for(int i = 0;i < MAX_CLIENTS;i++)
 	{
 		if(pss == node->subscribers[i]) {
 			return i;
 		}
+	}
+	// Add the subscription into the first avaliable spot
+	for(int i = 0;i < MAX_CLIENTS;i++)
+	{
 		if(!(node->subscribers[i]))
 		{
 			node->subscribers[i] = pss;
 			return i;
 		}
 	}
+	// No space left
 	return -1;
+}
+
+void node_remove_subscriber(struct Node* node, struct per_session_data_gambezi* pss)
+{
+	for(int i = 0;i < MAX_CLIENTS;i++)
+	{
+		if(pss == node->subscribers[i]) {
+			node->subscribers[i] = 0;
+		}
+	}
 }
 
 void node_notify_subscribers(struct Node* node)
 {
 	for(int i = 0;i < MAX_CLIENTS;i++)
 	{
-		if(!(node->subscribers[i]))
-		{
-			break;
-		}
-		else
+		if(node->subscribers[i])
 		{
 			struct per_session_data_gambezi* pss = node->subscribers[i];
 			struct Action* action = addAction(pss->actions);
