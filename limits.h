@@ -1,0 +1,14 @@
+#ifndef LIMITS_H
+#define LIMITS_H
+
+#define PREGEN_BUFFER_LENGTH 512
+#define BUFFER_LENGTH 1024
+#define MAX_ACTIONS 16
+
+#define MAX_CLIENTS 16
+#define MAX_NAME_LENGTH 256
+#define MAX_CHILDREN 256
+#define MAX_DEPTH 256
+#define MAX_KEY_LENGT MAX_DEPTH
+
+#endif

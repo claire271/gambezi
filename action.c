@@ -1,9 +1,4 @@
-#include <libwebsockets.h>
-#include <stdlib.h>
 #include "action.h"
-#include <stdio.h>
-#include <string.h>
-#include "arpa/inet.h"
 
 void initActionQueue(struct ActionQueue* actions)
 {

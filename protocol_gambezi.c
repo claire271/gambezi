@@ -1,22 +1,13 @@
 #define LWS_DLL
 #define LWS_INTERNAL
 #include <libwebsockets.h>
-#include <string.h>
 #include <stdint.h>
+
+#include "limits.h"
 #include "node.h"
 #include "action.h"
-#include "protocol_gambezi.h"
 #include "gambezi_generator.h"
-
-struct per_vhost_data_gambezi
-{
-	struct Node* root_node;
-};
-
-struct per_session_data_gambezi
-{
-	struct ActionQueue actions;
-};
+#include "protocol_gambezi.h"
 
 static int
 callback_gambezi(struct lws *wsi,
@@ -65,14 +56,16 @@ callback_gambezi(struct lws *wsi,
 		////////////////////////////////////////////////////////////////////////////////
 		// Initialize data related to a single connection
 		case LWS_CALLBACK_ESTABLISHED:
-			initActionQueue(&(pss->actions));
+			pss->actions = malloc(sizeof(struct ActionQueue));
+			initActionQueue(pss->actions);
+			pss->wsi = wsi;
 			break;
 
 		////////////////////////////////////////////////////////////////////////////////
 		// Writing back to the client
 		case LWS_CALLBACK_SERVER_WRITEABLE:
 		{
-			struct Action* action = useAction(&(pss->actions));
+			struct Action* action = useAction(pss->actions);
 
 			// Bail if there is no action
 			if(!action) {
@@ -119,7 +112,7 @@ callback_gambezi(struct lws *wsi,
 					                                     name);
 
 					// Queue and generate the response
-					struct Action* action = addAction(&(pss->actions));
+					struct Action* action = addAction(pss->actions);
 					action->type = PregeneratedRequest;
 					uint8_t* buffer = action->action.pregeneratedRequest.buffer + LWS_PRE;
 					int length = writeIDResponsePacket(buffer, BUFFER_LENGTH, node);
@@ -133,12 +126,43 @@ callback_gambezi(struct lws *wsi,
 				// Client set key value
 				case 1:
 				{
+					// Read packet
 					uint8_t* key;
 					uint16_t length;
 					uint8_t* value;
 					readValueSetPacket(data, &key, &length, &value);
 					struct Node* node = node_traverse(vhd->root_node, key);
+
+					// Set value and update subscribers
 					node_set_value(node, value, length);
+					node_notify_subscribers(node);
+					break;
+				}
+				// Client update subscription
+				case 3:
+				{
+					// Read packet
+					uint8_t* key;
+					uint8_t set_children;
+					uint16_t refresh_skip;
+					readSubscriptionUpdatePacket(data, &key, &set_children, &refresh_skip);
+					struct Node* node = node_traverse(vhd->root_node, key);
+
+					// Get updates as fast as possible
+					if(refresh_skip == 0)
+					{
+						node_add_subscriber(node, pss);
+					}
+					// Unsubscribe
+					else if(refresh_skip = 0xFFFF)
+					{
+
+					}
+					// Update at fixed rate
+					else
+					{
+
+					}
 					break;
 				}
 				// Client request node value
@@ -150,7 +174,7 @@ callback_gambezi(struct lws *wsi,
 					struct Node* node = node_traverse(vhd->root_node, key);
 
 					// Queue and generate the response
-					struct Action* action = addAction(&(pss->actions));
+					struct Action* action = addAction(pss->actions);
 					action->type = DataReturnRequest;
 					action->action.dataReturnRequest.node = node;
 

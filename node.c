@@ -1,9 +1,9 @@
 #include <libwebsockets.h>
-#include <stdlib.h>
-#include "node.h"
-#include <stdio.h>
 #include <string.h>
 #include "arpa/inet.h"
+#include "action.h"
+#include "node.h"
+#include "protocol_gambezi.h"
 
 // Allocates a node with a given name and type, and returns a pointer to it
 struct Node* node_init(const uint8_t* name, const uint8_t* parent_key, uint8_t id)
@@ -23,6 +23,12 @@ struct Node* node_init(const uint8_t* name, const uint8_t* parent_key, uint8_t i
 	for(int i = 0;i < MAX_CHILDREN;i++)
 	{
 		node->children[i] = 0;
+	}
+
+	// Zero subscriber nodes
+	for(int i = 0;i < MAX_CLIENTS;i++)
+	{
+		node->subscribers[i] = 0;
 	}
 
 	// Allocate buffer
@@ -125,4 +131,41 @@ void node_set_value(struct Node* node, const uint8_t* data, uint16_t data_length
 	*((uint16_t*)(node->key + key_length)) = htons(data_length);
 	memcpy(node->data, data, data_length);
 	node->current_length = buffer_length;
+}
+
+int node_add_subscriber(struct Node* node, struct per_session_data_gambezi* pss)
+{
+	for(int i = 0;i < MAX_CLIENTS;i++)
+	{
+		if(pss == node->subscribers[i]) {
+			return i;
+		}
+		if(!(node->subscribers[i]))
+		{
+			node->subscribers[i] = pss;
+			return i;
+		}
+	}
+	return -1;
+}
+
+void node_notify_subscribers(struct Node* node)
+{
+	for(int i = 0;i < MAX_CLIENTS;i++)
+	{
+		if(!(node->subscribers[i]))
+		{
+			break;
+		}
+		else
+		{
+			struct per_session_data_gambezi* pss = node->subscribers[i];
+			struct Action* action = addAction(pss->actions);
+			action->type = DataReturnRequest;
+			action->action.dataReturnRequest.node = node;
+
+			// Request callback to write to client
+			lws_callback_on_writable(pss->wsi);
+		}
+	}
 }

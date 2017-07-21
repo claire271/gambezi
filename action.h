@@ -1,15 +1,13 @@
 #ifndef ACTION_H
 #define ACTION_H
 
+#include <libwebsockets.h>
 #include <stdint.h>
-#include "node.h"
-#include "protocol_gambezi.h"
-
-#define MAX_ACTIONS 8
+#include "limits.h"
 
 struct PregeneratedRequest
 {
-	uint8_t buffer[LWS_PRE + BUFFER_LENGTH];
+	uint8_t buffer[LWS_PRE + PREGEN_BUFFER_LENGTH];
 	int length;
 };
 
