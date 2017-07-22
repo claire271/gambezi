@@ -9,6 +9,23 @@
 #include "gambezi_generator.h"
 #include "protocol_gambezi.h"
 
+static void
+uv_timeout_cb_update(uv_timer_t *w
+#if UV_VERSION_MAJOR == 0
+		, int status
+#endif
+)
+{
+	struct per_session_data_gambezi *pss = lws_container_of(
+		w,
+		struct per_session_data_gambezi,
+		timer);
+
+	// Write data
+	lws_callback_on_writable(pss->wsi);
+	lwsl_notice("%p", pss);
+}
+
 static int
 callback_gambezi(struct lws *wsi,
                  enum lws_callback_reasons reason,
@@ -35,6 +52,7 @@ callback_gambezi(struct lws *wsi,
 			vhd = lws_protocol_vh_priv_zalloc(lws_get_vhost(wsi),
 			                                  lws_get_protocol(wsi),
 			                                  sizeof(struct per_vhost_data_gambezi));
+			vhd->context = lws_get_context(wsi);
 
 			// Init data holders
 			uint8_t root_data[1];
@@ -56,40 +74,58 @@ callback_gambezi(struct lws *wsi,
 		////////////////////////////////////////////////////////////////////////////////
 		// Initialize data related to a single connection
 		case LWS_CALLBACK_ESTABLISHED:
+		{
+			// Session init
 			pss->actions = malloc(sizeof(struct ActionQueue));
 			initActionQueue(pss->actions);
 			pss->wsi = wsi;
+			uv_timer_init(lws_uv_getloop(vhd->context, 0),
+			              &(pss->timer));
+			uv_timer_start(&(pss->timer),
+			               uv_timeout_cb_update, DEFAULT_PERIOD, DEFAULT_PERIOD);
 			break;
+		}
+
+		////////////////////////////////////////////////////////////////////////////////
+		// Connection destroyed
+		case LWS_CALLBACK_CLOSED:
+		{
+			free(pss->actions);
+			uv_timer_stop(&(pss->timer));
+			break;
+		}
 
 		////////////////////////////////////////////////////////////////////////////////
 		// Writing back to the client
 		case LWS_CALLBACK_SERVER_WRITEABLE:
 		{
-			struct Action* action = useAction(pss->actions);
-
-			// Bail if there is no action
-			if(!action) {
-				break;
-			}
-
-			// Process queued responses
-			switch(action->type)
+			for(;;)
 			{
-				case PregeneratedRequest:
-				{
-					uint8_t* buffer = action->action.pregeneratedRequest.buffer + LWS_PRE;
-					int length = action->action.pregeneratedRequest.length;
-					lws_write(wsi, buffer, length, LWS_WRITE_BINARY);
+				struct Action* action = useAction(pss->actions);
+
+				// Bail if there is no action
+				if(!action) {
 					break;
 				}
-				case DataReturnRequest:
+
+				// Process queued responses
+				switch(action->type)
 				{
-					struct Node* node = action->action.dataReturnRequest.node;
-					lws_write(wsi, node->buffer, node->current_length, LWS_WRITE_BINARY);
-					break;
+					case PregeneratedRequest:
+					{
+						uint8_t* buffer = action->action.pregeneratedRequest.buffer + LWS_PRE;
+						int length = action->action.pregeneratedRequest.length;
+						lws_write(wsi, buffer, length, LWS_WRITE_BINARY);
+						break;
+					}
+					case DataReturnRequest:
+					{
+						struct Node* node = action->action.dataReturnRequest.node;
+						lws_write(wsi, node->buffer, node->current_length, LWS_WRITE_BINARY);
+						break;
+					}
 				}
 			}
-
 			break;
 		}
 
@@ -136,6 +172,14 @@ callback_gambezi(struct lws *wsi,
 					// Set value and update subscribers
 					node_set_value(node, value, length);
 					node_notify_subscribers(node);
+					break;
+				}
+				// Client set refresh rate
+				case 2:
+				{
+					uint16_t refresh_rate;
+					readRefreshRateSetPacket(data, &refresh_rate);
+					uv_timer_set_repeat(&(pss->timer), refresh_rate);
 					break;
 				}
 				// Client update subscription

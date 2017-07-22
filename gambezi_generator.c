@@ -24,6 +24,11 @@ int writeIDResponsePacket(uint8_t* buffer, int limit, struct Node* node)
 	return length;
 }
 
+void readRefreshRateSetPacket(uint8_t* data, uint16_t* refresh_rate)
+{
+	(*refresh_rate) = ntohs(*((uint16_t*)(data + 1)));
+}
+
 void readValueSetPacket(uint8_t* data, uint8_t** key, uint16_t* length, uint8_t** value)
 {
 	(*key) = data + 1;
