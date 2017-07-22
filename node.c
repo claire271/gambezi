@@ -181,3 +181,15 @@ void node_notify_subscribers(struct Node* node)
 		}
 	}
 }
+
+void node_free_all(struct Node* node)
+{
+	for(int i = 0;i < MAX_CHILDREN;i++)
+	{
+		if(node->children[i])
+		{
+			node_free_all(node->children[i]);
+		}
+	}
+	free(node);
+}

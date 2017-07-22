@@ -68,6 +68,7 @@ callback_gambezi(struct lws *wsi,
 		{
 			if (!vhd)
 				break;
+			node_free_all(vhd->root_node);
 			break;
 		}
 

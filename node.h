@@ -26,5 +26,6 @@ void node_set_value(struct Node* node, const uint8_t* data, uint16_t data_length
 int node_add_subscriber(struct Node* node, struct per_session_data_gambezi* pss);
 void node_remove_subscriber(struct Node* node, struct per_session_data_gambezi* pss);
 void node_notify_subscribers(struct Node* node);
+void node_free_all(struct Node* node);
 
 #endif
