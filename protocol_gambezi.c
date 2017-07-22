@@ -8,6 +8,7 @@
 #include "action.h"
 #include "gambezi_generator.h"
 #include "protocol_gambezi.h"
+#include "subscription.h"
 
 static void
 uv_timeout_cb_update(uv_timer_t *w
@@ -21,9 +22,25 @@ uv_timeout_cb_update(uv_timer_t *w
 		struct per_session_data_gambezi,
 		timer);
 
+	// Handle subscriptions
+	for(int i = 0;i < MAX_SUBSCRIPTIONS;i++)
+	{
+		struct Subscription* subscription = &(pss->subscriptions[i]);
+		if(subscription->node)
+		{
+			subscription->count++;
+			if(subscription->count >= subscription->period)
+			{
+				struct Action* action = addAction(pss->actions);
+				action->type = DataReturnRequest;
+				action->action.dataReturnRequest.node = subscription->node;
+				subscription->count = 0;
+			}
+		}
+	}
+
 	// Write data
 	lws_callback_on_writable(pss->wsi);
-	lwsl_notice("%p", pss);
 }
 
 static int
@@ -194,19 +211,50 @@ callback_gambezi(struct lws *wsi,
 					struct Node* node = node_traverse(vhd->root_node, key);
 
 					// Get updates as fast as possible
-					if(refresh_skip == 0)
+					if(refresh_skip == 0x0000)
 					{
 						node_add_subscriber(node, pss);
 					}
 					// Unsubscribe
-					else if(refresh_skip = 0xFFFF)
+					else if(refresh_skip == 0xFFFF)
 					{
 						node_remove_subscriber(node, pss);
+						struct Subscription* subscription = subscription_get_with_node(
+							pss->subscriptions,
+							node);
+						if(subscription)
+						{
+							subscription->node = 0;
+						}
 					}
 					// Update at fixed rate
 					else
 					{
-
+						struct Subscription* subscription = subscription_get_with_node(
+							pss->subscriptions,
+							node);
+						// Update existing subscription
+						if(subscription)
+						{
+							if(subscription->period != refresh_skip)
+							{
+								subscription->period = refresh_skip;
+								subscription->count = 0;
+							}
+						}
+						// Create new subscription
+						else
+						{
+							subscription = subscription_get_empty(pss->subscriptions);
+							// Bail if there is no more room
+							if(!subscription)
+							{
+								lwsl_err("Too many subscriptions");
+							}
+							subscription->node = node;
+							subscription->period = refresh_skip;
+							subscription->count = 0;
+						}
 					}
 					break;
 				}
