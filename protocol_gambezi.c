@@ -117,33 +117,33 @@ callback_gambezi(struct lws *wsi,
 		// Writing back to the client
 		case LWS_CALLBACK_SERVER_WRITEABLE:
 		{
-			for(;;)
-			{
-				struct Action* action = useAction(pss->actions);
+			struct Action* action = useAction(pss->actions);
 
-				// Bail if there is no action
-				if(!action) {
+			// Bail if there is no action
+			if(!action) {
+				break;
+			}
+
+			// Process queued responses
+			switch(action->type)
+			{
+				case PregeneratedRequest:
+				{
+					uint8_t* buffer = action->action.pregeneratedRequest.buffer + LWS_PRE;
+					int length = action->action.pregeneratedRequest.length;
+					lws_write(wsi, buffer, length, LWS_WRITE_BINARY);
 					break;
 				}
-
-				// Process queued responses
-				switch(action->type)
+				case DataReturnRequest:
 				{
-					case PregeneratedRequest:
-					{
-						uint8_t* buffer = action->action.pregeneratedRequest.buffer + LWS_PRE;
-						int length = action->action.pregeneratedRequest.length;
-						lws_write(wsi, buffer, length, LWS_WRITE_BINARY);
-						break;
-					}
-					case DataReturnRequest:
-					{
-						struct Node* node = action->action.dataReturnRequest.node;
-						lws_write(wsi, node->buffer, node->current_length, LWS_WRITE_BINARY);
-						break;
-					}
+					struct Node* node = action->action.dataReturnRequest.node;
+					lws_write(wsi, node->buffer, node->current_length, LWS_WRITE_BINARY);
+					break;
 				}
 			}
+
+			// Callback again just in case
+			lws_callback_on_writable(wsi);
 			break;
 		}
 
