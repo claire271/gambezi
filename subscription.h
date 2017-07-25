@@ -12,7 +12,14 @@ struct Subscription
 	uint16_t count;
 };
 
+/**
+ * Returns a pointer to a subscription matching the given node
+ */
 struct Subscription* subscription_get_with_node(struct Subscription* subscriptions, struct Node* node);
+
+/**
+ * Returns a pointer to a subscription to be populated
+ */
 struct Subscription* subscription_get_empty(struct Subscription* subscriptions);
 
 #endif

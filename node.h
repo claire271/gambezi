@@ -6,26 +6,60 @@
 
 struct Node
 {
+	// Node identification, children, and subscribers
 	uint8_t name[MAX_NAME_LENGTH];
 	struct Node* children[MAX_CHILDREN];
-	struct per_session_data_gambezi* subscribers[MAX_CLIENTS];
+	struct session_data* subscribers[MAX_CLIENTS];
 	
+	// Buffer to be allocated
 	uint8_t* buffer;
 	uint16_t current_length;
 	uint16_t allocated_length;
 
+	// Pointers to locations within the buffer
 	uint8_t* key;
 	uint8_t* data;
 };
 
+/**
+ * Allocates a node with a given name and type, and returns a pointer to it
+ */
 struct Node* node_init(const uint8_t* name, const uint8_t* parent_key, uint8_t id);
-struct Node* node_traverse(struct Node* root_node, const uint8_t* key);
-struct Node* get_node_with_id(struct Node* root_node, const uint8_t* parent_key, const uint8_t* name);
-void node_set_value(struct Node* node, const uint8_t* data, uint16_t data_length);
 
-int node_add_subscriber(struct Node* node, struct per_session_data_gambezi* pss);
-void node_remove_subscriber(struct Node* node, struct per_session_data_gambezi* pss);
+/**
+ * Gets the node for a given key
+ */
+struct Node* node_traverse(struct Node* root_node, const uint8_t* key);
+
+/**
+ * Gets the ID of a node, creates it if it does not exist yet
+ */
+struct Node* get_node_with_id(struct Node* root_node, const uint8_t* parent_key, const uint8_t* name);
+
+/**
+ * Sets the data of a given node
+ */
+int node_set_value(struct Node* node, const uint8_t* data, uint16_t data_length);
+
+
+/**
+ * Adds a subscriber to the given node
+ */
+int node_add_subscriber(struct Node* node, struct session_data* psd);
+
+/**
+ * Removes a subscriber from the given node
+ */
+int node_remove_subscriber(struct Node* node, struct session_data* psd);
+
+/**
+ * Notify all subscribers that this node has updated
+ */
 void node_notify_subscribers(struct Node* node);
+
+/**
+ * Free all children of this node and then itself (recursive)
+ */
 void node_free_all(struct Node* node);
 
 #endif

@@ -48,21 +48,3 @@ void readSubscriptionUpdatePacket(uint8_t* data, uint8_t** key, uint8_t* set_chi
 	(*set_children) = !!(data[1] & (0x01 << 0));
 	(*refresh_skip) = ntohs(*((uint16_t*)(data + 2)));
 }
-
-int writeValueResponsePacket(uint8_t* buffer, int limit, struct Node* node)
-{
-	int length = 0;
-	// Packet header
-	buffer[length++] = 0x01;
-	// Key
-	memcpy(buffer + length, node->key, node->key[0] + 1);
-	length += node->key[0] + 1;
-	// Length
-	*((uint16_t*)(buffer + length)) = htons(node->current_length - 5);
-	length += 2;
-	// Data
-	memcpy(buffer + length, node->data, node->current_length - 5);
-	length += node->current_length - 5;
-
-	return length;
-}

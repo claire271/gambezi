@@ -3,13 +3,13 @@
 
 #include "subscription.h"
 
-struct per_vhost_data_gambezi
+struct vhost_data
 {
 	struct Node* root_node;
 	struct lws_context* context;
 };
 
-struct per_session_data_gambezi
+struct session_data
 {
 	struct ActionQueue* actions;
 	struct lws* wsi;

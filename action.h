@@ -40,8 +40,21 @@ struct ActionQueue
 	int length;
 };
 
+/**
+ * Initializes an ActionQueue that has already been alocated
+ */
 void initActionQueue(struct ActionQueue* actions);
+
+/**
+ * Adds an action to the action queue.
+ * The pointer returned points to the action to be populated.
+ */
 struct Action* addAction(struct ActionQueue* actions);
+
+/**
+ * Gets the first queued action and takes it off of the queue
+ * The pointer returned points to the action to be used
+ */
 struct Action* useAction(struct ActionQueue* actions);
 
 #endif
