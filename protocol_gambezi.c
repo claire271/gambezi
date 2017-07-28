@@ -292,6 +292,16 @@ callback_gambezi(struct lws *wsi,
 						// Get updates as fast as possible
 						if(refresh_skip == 0x0000)
 						{
+							// Remove fixed rate subscription
+							struct Subscription* subscription = subscription_get_with_node(
+								psd->subscriptions,
+								node);
+							if(subscription)
+							{
+								subscription->node = 0;
+							}
+
+							// Subscribe at as fast as possible rate
 							int code = node_add_subscriber(node, psd);
 							if(code < 0)
 							{
@@ -302,7 +312,10 @@ callback_gambezi(struct lws *wsi,
 						// Unsubscribe
 						else if(refresh_skip == 0xFFFF)
 						{
+							// Remove fast as possible subscription
 							node_remove_subscriber(node, psd);
+
+							// Remove fixed rate subscription
 							struct Subscription* subscription = subscription_get_with_node(
 								psd->subscriptions,
 								node);
@@ -314,6 +327,10 @@ callback_gambezi(struct lws *wsi,
 						// Update at fixed rate
 						else
 						{
+							// Remove fast as possible subscription
+							node_remove_subscriber(node, psd);
+
+							// Subscribe at fixed rate
 							struct Subscription* subscription = subscription_get_with_node(
 								psd->subscriptions,
 								node);
