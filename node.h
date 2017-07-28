@@ -48,6 +48,12 @@ int node_set_value(struct Node* node, const uint8_t* data, uint16_t data_length)
 int node_queue(struct Node* node, struct session_data* psd, uint8_t recursive);
 
 /**
+ * Queues a node to have its ID and name written to a client
+ * May be recursive if desired
+ */
+int node_queue_id(struct Node* node, struct session_data* psd, uint8_t recursive);
+
+/**
  * Adds a subscriber to the given node
  */
 int node_add_subscriber(struct Node* node, struct session_data* psd, uint8_t recursive);

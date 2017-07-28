@@ -60,9 +60,14 @@ Keys can be up to 255 bytes long (excluding the length byte).
 
 ### Request Node ID
 #### Header
-| Byte | Contents | Function                      |
-|------|----------|-------------------------------|
-| 0    | 0x00     | Signifies this type of packet |
+| Byte | Contents | Function                       |
+|------|----------|--------------------------------|
+| 0    | 0x00     | Signifies this type of packet  |
+| 1    | *flags*  | Flags related to subscriptions |
+##### Flags
+| Bit      | 7 - 1      | 0                          |
+|----------|------------|----------------------------|
+| Function | *reserved* | Set to get all child nodes |
 #### Sections
 | Section Type | Description                          |
 |--------------|--------------------------------------|

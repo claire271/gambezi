@@ -218,7 +218,8 @@ callback_gambezi(struct lws *wsi,
 					// Extract data from the packet
 					uint8_t* parent_key;
 					uint8_t* name;
-					readIDRequestPacket(data, &parent_key, &name);
+					uint8_t get_children;
+					readIDRequestPacket(data, &parent_key, &name, &get_children);
 
 					// Get node with matching name and parent key
 					struct Node* node = get_node_with_id(vhd->root_node,
@@ -227,12 +228,7 @@ callback_gambezi(struct lws *wsi,
 					// No error
 					if(node)
 					{
-						// Queue and generate the response
-						struct Action* action = addAction(psd->actions);
-						action->type = PregeneratedRequest;
-						uint8_t* buffer = action->action.pregeneratedRequest.buffer + LWS_PRE;
-						int length = writeIDResponsePacket(buffer, BUFFER_LENGTH, node);
-						action->action.pregeneratedRequest.length = length;
+						node_queue_id(node, psd, get_children);
 					}
 					// Error
 					else

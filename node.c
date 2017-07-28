@@ -219,6 +219,53 @@ int node_queue(struct Node* node, struct session_data* psd, uint8_t recursive)
 }
 
 /**
+ * Queues a node to have its ID and name written to a client
+ * May be recursive if desired
+ */
+int node_queue_id(struct Node* node, struct session_data* psd, uint8_t recursive)
+{
+	int code = 0;
+	// Queue and generate the response
+	struct Action* action = addAction(psd->actions);
+	// No error
+	if(action)
+	{
+		action->type = PregeneratedRequest;
+		uint8_t* buffer = action->action.pregeneratedRequest.buffer + LWS_PRE;
+		int length = writeIDResponsePacket(buffer, BUFFER_LENGTH, node);
+		action->action.pregeneratedRequest.length = length;
+
+		// Manage children if recursive
+		if(recursive)
+		{
+			for(int i = 0;i < MAX_CHILDREN;i++)
+			{
+				// No more children to check
+				if(!(node->children[i]))
+				{
+					break;
+				}
+				// Queue child
+				int code2 = node_queue_id(node->children[i], psd, recursive);
+				// Handle no more actions
+				if(code2 > 0)
+				{
+					code = 1;
+				}
+			}
+		}
+	}
+	// Too many actions
+	else
+	{
+		lwsl_notice("NOTICE: Too many actions.");
+		code = 1;
+	}
+
+	return code;
+}
+
+/**
  * Adds a subscriber to the given node
  */
 int node_add_subscriber(struct Node* node, struct session_data* psd, uint8_t recursive)
