@@ -10,6 +10,7 @@ struct Node
 	uint8_t name[MAX_NAME_LENGTH];
 	struct Node* children[MAX_CHILDREN];
 	struct session_data* subscribers[MAX_CLIENTS];
+	uint8_t recursive[MAX_CLIENTS];
 	
 	// Buffer to be allocated
 	uint8_t* buffer;
@@ -41,11 +42,15 @@ struct Node* get_node_with_id(struct Node* root_node, const uint8_t* parent_key,
  */
 int node_set_value(struct Node* node, const uint8_t* data, uint16_t data_length);
 
+/**
+ * Queues a node to be written to a client
+ */
+int node_queue(struct Node* node, struct session_data* psd, uint8_t recursive);
 
 /**
  * Adds a subscriber to the given node
  */
-int node_add_subscriber(struct Node* node, struct session_data* psd);
+int node_add_subscriber(struct Node* node, struct session_data* psd, uint8_t recursive);
 
 /**
  * Removes a subscriber from the given node

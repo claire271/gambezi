@@ -56,23 +56,15 @@ uv_timeout_cb_update(uv_timer_t *w
 			if(subscription->count >= subscription->period)
 			{
 				// Queue up response
-				struct Action* action = addAction(psd->actions);
+				int code = node_queue(subscription->node, psd, subscription->recursive);
 				// No error
-				if(action)
+				if(!code)
 				{
-					action->type = DataReturnRequest;
-					action->action.dataReturnRequest.node = subscription->node;
-
 					// Reset counter
 					subscription->count = 0;
 				}
-				// Too many actions
-				else
-				{
-					lwsl_notice("NOTICE: Too many actions.");
-					// Not resetting counter to hopefully push this subscription
-					// onto a more empty time slot
-				}
+				// Not resetting counter on error to hopefully push this subscription
+				// onto a more empty time slot
 			}
 		}
 	}
@@ -276,6 +268,7 @@ callback_gambezi(struct lws *wsi,
 					else
 					{
 						error_message(psd, "ERROR: Invalid node requested");
+						lws_callback_on_writable(wsi);
 					}
 
 					break;
@@ -316,10 +309,11 @@ callback_gambezi(struct lws *wsi,
 							}
 
 							// Subscribe at as fast as possible rate
-							int code = node_add_subscriber(node, psd);
+							int code = node_add_subscriber(node, psd, set_children);
 							if(code < 0)
 							{
 								error_message(psd, "ERROR: Unable to subscribe to node");
+								lws_callback_on_writable(wsi);
 							}
 						}
 						// Unsubscribe
@@ -350,6 +344,7 @@ callback_gambezi(struct lws *wsi,
 							// Update existing subscription
 							if(subscription)
 							{
+								subscription->recursive = set_children;
 								if(subscription->period != refresh_skip)
 								{
 									subscription->period = refresh_skip;
@@ -360,6 +355,7 @@ callback_gambezi(struct lws *wsi,
 							else
 							{
 								subscription = subscription_get_empty(psd->subscriptions);
+								subscription->recursive = set_children;
 								// No error
 								if(subscription)
 								{
@@ -371,6 +367,7 @@ callback_gambezi(struct lws *wsi,
 								else
 								{
 									error_message(psd, "ERROR: Unable to subscribe to node");
+									lws_callback_on_writable(wsi);
 								}
 							}
 						}
@@ -379,6 +376,7 @@ callback_gambezi(struct lws *wsi,
 					else
 					{
 						error_message(psd, "ERROR: Invalid node requested");
+						lws_callback_on_writable(wsi);
 					}
 
 					break;
@@ -396,9 +394,7 @@ callback_gambezi(struct lws *wsi,
 					if(node)
 					{
 						// Queue and generate the response
-						struct Action* action = addAction(psd->actions);
-						action->type = DataReturnRequest;
-						action->action.dataReturnRequest.node = node;
+						node_queue(node, psd, get_children);
 					}
 					// Error
 					else

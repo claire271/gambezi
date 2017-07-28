@@ -8,6 +8,7 @@
 struct Subscription
 {
 	struct Node* node;
+	uint8_t recursive;
 	uint16_t period;
 	uint16_t count;
 };

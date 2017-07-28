@@ -174,15 +174,61 @@ int node_set_value(struct Node* node, const uint8_t* data, uint16_t data_length)
 }
 
 /**
+ * Queues a node to be written to a client
+ * May be recursive if desired
+ */
+int node_queue(struct Node* node, struct session_data* psd, uint8_t recursive)
+{
+	int code = 0;
+	// Queue response
+	struct Action* action = addAction(psd->actions);
+	// No error
+	if(action)
+	{
+		action->type = DataReturnRequest;
+		action->action.dataReturnRequest.node = node;
+
+		// Manage children if recursive
+		if(recursive)
+		{
+			for(int i = 0;i < MAX_CHILDREN;i++)
+			{
+				// No more children to check
+				if(!(node->children[i]))
+				{
+					break;
+				}
+				// Queue child
+				int code2 = node_queue(node->children[i], psd, recursive);
+				// Handle no more actions
+				if(code2 > 0)
+				{
+					code = 1;
+				}
+			}
+		}
+	}
+	// Too many actions
+	else
+	{
+		lwsl_notice("NOTICE: Too many actions.");
+		code = 1;
+	}
+
+	return code;
+}
+
+/**
  * Adds a subscriber to the given node
  */
-int node_add_subscriber(struct Node* node, struct session_data* psd)
+int node_add_subscriber(struct Node* node, struct session_data* psd, uint8_t recursive)
 {
 	// See if the subscription already exists
 	for(int i = 0;i < MAX_CLIENTS;i++)
 	{
 		if(psd == node->subscribers[i])
 		{
+			node->recursive[i] = recursive;
 			return i;
 		}
 	}
@@ -193,6 +239,7 @@ int node_add_subscriber(struct Node* node, struct session_data* psd)
 		if(!(node->subscribers[i]))
 		{
 			node->subscribers[i] = psd;
+			node->recursive[i] = recursive;
 			return i;
 		}
 	}
@@ -230,13 +277,10 @@ void node_notify_subscribers(struct Node* node)
 		if(node->subscribers[i])
 		{
 			// Queue response
-			struct session_data* psd = node->subscribers[i];
-			struct Action* action = addAction(psd->actions);
-			action->type = DataReturnRequest;
-			action->action.dataReturnRequest.node = node;
+			node_queue(node, node->subscribers[i], node->recursive[i]);
 
 			// Request callback to write to client
-			lws_callback_on_writable(psd->wsi);
+			lws_callback_on_writable(node->subscribers[i]->wsi);
 		}
 	}
 }
