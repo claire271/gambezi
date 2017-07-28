@@ -16,6 +16,22 @@
  */
 
 /**
+ * This function is called when an error message needs to be written to the client
+ */
+void error_message(struct session_data* psd, const char* message)
+{
+	// Print to log
+	lwsl_err(message);
+
+	// Send to client
+	struct Action* action = addAction(psd->actions);
+	action->type = PregeneratedRequest;
+	uint8_t* buffer = action->action.pregeneratedRequest.buffer + LWS_PRE;
+	int length = writeErrorPacket(buffer, BUFFER_LENGTH, message);
+	action->action.pregeneratedRequest.length = length;
+}
+
+/**
  * This function is called by lib_uv.
  * This callback is called for each connection (client).
  * Handles fixed rate key updates.
@@ -229,8 +245,7 @@ callback_gambezi(struct lws *wsi,
 					// Error
 					else
 					{
-						lwsl_err("ERROR: Unable to get node ID");
-						//TODO: Send message to client about this condition
+						error_message(psd, "ERROR: Unable to get node ID");
 					}
 
 					// Request callback to write to client
@@ -260,8 +275,7 @@ callback_gambezi(struct lws *wsi,
 					// Error
 					else
 					{
-						lwsl_err("ERROR: Invalid node requested");
-						//TODO: Send message to client about this condition
+						error_message(psd, "ERROR: Invalid node requested");
 					}
 
 					break;
@@ -305,8 +319,7 @@ callback_gambezi(struct lws *wsi,
 							int code = node_add_subscriber(node, psd);
 							if(code < 0)
 							{
-								lwsl_err("ERROR: Unable to subscribe to node");
-								//TODO: Send message to client about this condition
+								error_message(psd, "ERROR: Unable to subscribe to node");
 							}
 						}
 						// Unsubscribe
@@ -357,8 +370,7 @@ callback_gambezi(struct lws *wsi,
 								// Error
 								else
 								{
-									lwsl_err("ERROR: Unable to subscribe to node");
-									//TODO: Send message to client about this condition
+									error_message(psd, "ERROR: Unable to subscribe to node");
 								}
 							}
 						}
@@ -366,8 +378,7 @@ callback_gambezi(struct lws *wsi,
 					// Error
 					else
 					{
-						lwsl_err("ERROR: Invalid node requested");
-						//TODO: Send message to client about this condition
+						error_message(psd, "ERROR: Invalid node requested");
 					}
 
 					break;
@@ -392,8 +403,7 @@ callback_gambezi(struct lws *wsi,
 					// Error
 					else
 					{
-						lwsl_err("ERROR: Invalid node requested");
-						//TODO: Send message to client about this condition
+						error_message(psd, "ERROR: Invalid node requested");
 					}
 
 					// Request callback to write to client

@@ -35,7 +35,7 @@ Values are stored as a two byte length followed by the data.
 | ...     | ...             |
 | 2 + *n* | *nth* data byte |
 
-### Name Format
+### String and Name Format
 Names can be up to 255 bytes long (excluding the length byte).
 | Byte    | Contents        |
 |---------|-----------------|
@@ -164,6 +164,18 @@ Keys can be up to 255 bytes long (excluding the length byte).
 | Header       | Header belonging to this packet type |
 | Key          | Key of this node                     |
 | Value        | Value of this node                   |
+
+
+### Error with request
+#### Header
+| Byte | Contents | Function                      |
+|------|----------|-------------------------------|
+| 0    | 0x02     | Signifies this type of packet |
+#### Sections
+| Section Type | Description                          |
+|--------------|--------------------------------------|
+| Header       | Header belonging to this packet type |
+| Name         | The error message                    |
 
 
 

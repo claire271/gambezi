@@ -24,6 +24,25 @@ int writeIDResponsePacket(uint8_t* buffer, int limit, struct Node* node)
 	return length;
 }
 
+int writeErrorPacket(uint8_t* buffer, int limit, const char* message)
+{
+	int length = 0;
+	// Packet header
+	buffer[length++] = PACKET_RETURN_ERROR;
+	// Message length
+	int string_length = strlen(message);
+	if(string_length > 255)
+	{
+		string_length = 255;
+	}
+	buffer[length++] = string_length;
+	// Message
+	memcpy(buffer + length, message, string_length);
+	length += string_length;
+
+	return length;
+}
+
 void readRefreshRateSetPacket(uint8_t* data, uint16_t* refresh_rate)
 {
 	(*refresh_rate) = ntohs(*((uint16_t*)(data + 1)));
