@@ -93,7 +93,7 @@ struct Node* node_traverse(struct Node* root_node, const uint8_t* key)
 /**
  * Gets the ID of a node, creates it if it does not exist yet
  */
-struct Node* get_node_with_id(struct Node* root_node, const uint8_t* parent_key, const uint8_t* name)
+struct Node* node_get_with_id(struct Node* root_node, const uint8_t* parent_key, const uint8_t* name)
 {
 	// Traverse tree to immediate parent
 	struct Node* parent_node = node_traverse(root_node, parent_key);
@@ -201,7 +201,7 @@ int node_queue(struct Node* node, struct session_data* psd, uint8_t recursive)
 				// Queue child
 				int code2 = node_queue(node->children[i], psd, recursive);
 				// Handle no more actions
-				if(code2 > 0)
+				if(code2)
 				{
 					code = 1;
 				}
@@ -316,20 +316,31 @@ int node_remove_subscriber(struct Node* node, struct session_data* psd)
 /**
  * Notify all subscribers that this node has updated
  */
-void node_notify_subscribers(struct Node* node)
+int node_notify_subscribers(struct Node* node)
 {
+	int code = 0;
+
 	// Search all subscribers
 	for(int i = 0;i < MAX_CLIENTS;i++)
 	{
 		if(node->subscribers[i])
 		{
 			// Queue response
-			node_queue(node, node->subscribers[i], node->recursive[i]);
-
-			// Request callback to write to client
-			lws_callback_on_writable(node->subscribers[i]->wsi);
+			int code2 = node_queue(node, node->subscribers[i], node->recursive[i]);
+			// No error
+			if(!code2)
+			{
+				// Request callback to write to client
+				lws_callback_on_writable(node->subscribers[i]->wsi);
+			}
+			// Error
+			{
+				code = 1;
+			}
 		}
 	}
+
+	return code;
 }
 
 /**

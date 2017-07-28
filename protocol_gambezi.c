@@ -25,10 +25,19 @@ void error_message(struct session_data* psd, const char* message)
 
 	// Send to client
 	struct Action* action = addAction(psd->actions);
-	action->type = PregeneratedRequest;
-	uint8_t* buffer = action->action.pregeneratedRequest.buffer + LWS_PRE;
-	int length = writeErrorPacket(buffer, BUFFER_LENGTH, message);
-	action->action.pregeneratedRequest.length = length;
+	// No error
+	if(action)
+	{
+		action->type = PregeneratedRequest;
+		uint8_t* buffer = action->action.pregeneratedRequest.buffer + LWS_PRE;
+		int length = writeErrorPacket(buffer, BUFFER_LENGTH, message);
+		action->action.pregeneratedRequest.length = length;
+	}
+	// Too many actions
+	else
+	{
+		lwsl_notice("NOTICE: Too many actions.");
+	}
 }
 
 /**
@@ -222,22 +231,27 @@ callback_gambezi(struct lws *wsi,
 					readIDRequestPacket(data, &parent_key, &name, &get_children);
 
 					// Get node with matching name and parent key
-					struct Node* node = get_node_with_id(vhd->root_node,
+					struct Node* node = node_get_with_id(vhd->root_node,
 					                                     parent_key,
 					                                     name);
 					// No error
 					if(node)
 					{
-						node_queue_id(node, psd, get_children);
+						int code = node_queue_id(node, psd, get_children);
+						// No error
+						if(!code)
+						{
+							// Request callback to write to client
+							lws_callback_on_writable(wsi);
+						}
 					}
 					// Error
 					else
 					{
 						error_message(psd, "ERROR: Unable to get node ID");
+						lws_callback_on_writable(wsi);
 					}
 
-					// Request callback to write to client
-					lws_callback_on_writable(wsi);
 					break;
 				}
 				////////////////////////////////////////////////////////////
@@ -257,8 +271,18 @@ callback_gambezi(struct lws *wsi,
 					if(node)
 					{
 						// Set value and update subscribers
-						node_set_value(node, value, length);
-						node_notify_subscribers(node);
+						int code = node_set_value(node, value, length);
+						// No error
+						if(!code)
+						{
+							node_notify_subscribers(node);
+							// No need to handle error code here
+						}
+						else
+						{
+							error_message(psd, "ERROR: Unable to set node value");
+							lws_callback_on_writable(wsi);
+						}
 					}
 					// Error
 					else
@@ -317,6 +341,7 @@ callback_gambezi(struct lws *wsi,
 						{
 							// Remove fast as possible subscription
 							node_remove_subscriber(node, psd);
+							// No need to handle error code here
 
 							// Remove fixed rate subscription
 							struct Subscription* subscription = subscription_get_with_node(
@@ -332,6 +357,7 @@ callback_gambezi(struct lws *wsi,
 						{
 							// Remove fast as possible subscription
 							node_remove_subscriber(node, psd);
+							// No need to handle error code here
 
 							// Subscribe at fixed rate
 							struct Subscription* subscription = subscription_get_with_node(
@@ -390,16 +416,20 @@ callback_gambezi(struct lws *wsi,
 					if(node)
 					{
 						// Queue and generate the response
-						node_queue(node, psd, get_children);
+						int code = node_queue(node, psd, get_children);
+						// No error
+						if(!code)
+						{
+							// Request callback to write to client
+							lws_callback_on_writable(wsi);
+						}
 					}
 					// Error
 					else
 					{
 						error_message(psd, "ERROR: Invalid node requested");
+						lws_callback_on_writable(wsi);
 					}
-
-					// Request callback to write to client
-					lws_callback_on_writable(wsi);
 					break;
 				}
 			}

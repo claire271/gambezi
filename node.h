@@ -35,7 +35,7 @@ struct Node* node_traverse(struct Node* root_node, const uint8_t* key);
 /**
  * Gets the ID of a node, creates it if it does not exist yet
  */
-struct Node* get_node_with_id(struct Node* root_node, const uint8_t* parent_key, const uint8_t* name);
+struct Node* node_get_with_id(struct Node* root_node, const uint8_t* parent_key, const uint8_t* name);
 
 /**
  * Sets the data of a given node
@@ -66,7 +66,7 @@ int node_remove_subscriber(struct Node* node, struct session_data* psd);
 /**
  * Notify all subscribers that this node has updated
  */
-void node_notify_subscribers(struct Node* node);
+int node_notify_subscribers(struct Node* node);
 
 /**
  * Free all children of this node and then itself (recursive)
