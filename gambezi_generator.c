@@ -13,7 +13,7 @@ int writeIDResponsePacket(uint8_t* buffer, int limit, struct Node* node)
 {
 	int length = 0;
 	// Packet header
-	buffer[length++] = 0x00;
+	buffer[length++] = PACKET_RETURN_KEY_ID;
 	// Key
 	memcpy(buffer + length, node->key, node->key[0] + 1);
 	length += node->key[0] + 1;

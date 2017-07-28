@@ -11,6 +11,7 @@
 #define PACKET_REQUEST_KEY_VALUE 4
 
 // Outgoing packet IDs
+#define PACKET_RETURN_KEY_ID 0
 #define PACKET_RETURN_KEY_VALUE 1
 
 void readIDRequestPacket(uint8_t* data, uint8_t** parent_key, uint8_t** name);
