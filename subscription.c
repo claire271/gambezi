@@ -6,7 +6,7 @@
 struct Subscription* subscription_get_with_node(struct Subscription* subscriptions, struct Node* node)
 {
 	// Search for the given node
-	for(int i = 0;i < MAX_SUBSCRIPTIONS;i++)
+	for(int i = 0;i < MAX_RATE_SUBSCRIPTIONS;i++)
 	{
 		if(subscriptions[i].node == node)
 		{
@@ -24,7 +24,7 @@ struct Subscription* subscription_get_with_node(struct Subscription* subscriptio
 struct Subscription* subscription_get_empty(struct Subscription* subscriptions)
 {
 	// Search for empty subscription
-	for(int i = 0;i < MAX_SUBSCRIPTIONS;i++)
+	for(int i = 0;i < MAX_RATE_SUBSCRIPTIONS;i++)
 	{
 		if(!subscriptions[i].node)
 		{

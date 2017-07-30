@@ -281,18 +281,36 @@ int node_add_subscriber(struct Node* node, struct session_data* psd, uint8_t rec
 	}
 
 	// Add the subscription into the first avaliable spot
+	int index = -1;
 	for(int i = 0;i < MAX_CLIENTS;i++)
 	{
 		if(!(node->subscribers[i]))
 		{
 			node->subscribers[i] = psd;
 			node->recursive[i] = recursive;
-			return i;
+			index = i;
+			break;
+		}
+	}
+
+	// Bail if no space left
+	if(index < 0)
+	{
+		return -1;
+	}
+
+	// Create event data to node link
+	for(int i = 0;i < MAX_EVENT_SUBSCRIPTIONS;i++)
+	{
+		if(!(psd->subscribed[i]))
+		{
+			psd->subscribed[i] = node;
+			return index;
 		}
 	}
 
 	// No space left
-	return -1;
+	return -2;
 }
 
 /**
@@ -301,16 +319,35 @@ int node_add_subscriber(struct Node* node, struct session_data* psd, uint8_t rec
 int node_remove_subscriber(struct Node* node, struct session_data* psd)
 {
 	// Search all subscribers
+	int index = -1;
 	for(int i = 0;i < MAX_CLIENTS;i++)
 	{
-		if(psd == node->subscribers[i]) {
+		if(psd == node->subscribers[i])
+		{
 			node->subscribers[i] = 0;
-			return i;
+			index = i;
+			break;
 		}
 	}
 
-	// No subscriber removed
-	return -1;
+	// Bail if no subscriber removed
+	if(index < 0)
+	{
+		return -1;
+	}
+
+	// Remove event data to node link
+	for(int i = 0;i < MAX_EVENT_SUBSCRIPTIONS;i++)
+	{
+		if(node == psd->subscribed[i])
+		{
+			psd->subscribed[i] = 0;
+			return index;
+		}
+	}
+
+	// No subscriber found
+	return -2;
 }
 
 /**

@@ -51,7 +51,7 @@ static void uv_timeout_cb_update(uv_timer_t *w)
 	struct session_data *psd = ((struct TimerHolder*)(w))->psd;
 
 	// Cycle through all subscriptions for this client
-	for(int i = 0;i < MAX_SUBSCRIPTIONS;i++)
+	for(int i = 0;i < MAX_RATE_SUBSCRIPTIONS;i++)
 	{
 		struct Subscription* subscription = &(psd->subscriptions[i]);
 		if(subscription->node)
@@ -173,6 +173,19 @@ callback_gambezi(struct lws *wsi,
 			              (uv_timer_t*)(psd->timer_holder));
 			uv_timer_start((uv_timer_t*)(psd->timer_holder),
 			               uv_timeout_cb_update, DEFAULT_PERIOD, DEFAULT_PERIOD);
+
+			// Zero subscriptions
+			for(int i = 0;i < MAX_RATE_SUBSCRIPTIONS;i++)
+			{
+				psd->subscriptions[i].node = 0;
+			}
+
+			// Zero subscribed
+			for(int i = 0;i < MAX_EVENT_SUBSCRIPTIONS;i++)
+			{
+				psd->subscribed[i] = 0;
+			}
+
 			break;
 		}
 
@@ -180,9 +193,21 @@ callback_gambezi(struct lws *wsi,
 		// Single connection destroyed
 		case LWS_CALLBACK_CLOSED:
 		{
-			free(psd->actions);
+			// Cleanup timers
 			uv_timer_stop((uv_timer_t*)(psd->timer_holder));
 			uv_close((uv_handle_t*)(psd->timer_holder), uv_timer_close_complete);
+
+			// Cleanup event subscriptions
+			for(int i = 0;i < MAX_EVENT_SUBSCRIPTIONS;i++)
+			{
+				if(psd->subscribed[i])
+				{
+					node_remove_subscriber(psd->subscribed[i], psd);
+				}
+			}
+
+			// Cleanup actions
+			free(psd->actions);
 			break;
 		}
 

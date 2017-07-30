@@ -14,7 +14,8 @@ struct session_data
 	struct ActionQueue* actions;
 	struct lws* wsi;
 	struct TimerHolder* timer_holder;
-	struct Subscription subscriptions[MAX_SUBSCRIPTIONS];
+	struct Subscription subscriptions[MAX_RATE_SUBSCRIPTIONS];
+	struct Node* subscribed[MAX_EVENT_SUBSCRIPTIONS];
 };
 
 struct TimerHolder
