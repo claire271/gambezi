@@ -13,8 +13,16 @@ struct session_data
 {
 	struct ActionQueue* actions;
 	struct lws* wsi;
-	uv_timer_t timer;
+	struct TimerHolder* timer_holder;
 	struct Subscription subscriptions[MAX_SUBSCRIPTIONS];
+};
+
+struct TimerHolder
+{
+	// DO NOT REARRAGE
+	// Code relies on timer being the first element of this struct
+	uv_timer_t timer;
+	struct session_data* psd;
 };
 
 #endif

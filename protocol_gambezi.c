@@ -45,15 +45,10 @@ void error_message(struct session_data* psd, const char* message)
  * This callback is called for each connection (client).
  * Handles fixed rate key updates.
  */
-static void
-uv_timeout_cb_update(uv_timer_t *w
-#if UV_VERSION_MAJOR == 0
-		, int status
-#endif
-)
+static void uv_timeout_cb_update(uv_timer_t *w)
 {
 	// Get client session data
-	struct session_data *psd = lws_container_of(w, struct session_data, timer);
+	struct session_data *psd = ((struct TimerHolder*)(w))->psd;
 
 	// Cycle through all subscriptions for this client
 	for(int i = 0;i < MAX_SUBSCRIPTIONS;i++)
@@ -80,6 +75,16 @@ uv_timeout_cb_update(uv_timer_t *w
 
 	// Request write data
 	lws_callback_on_writable(psd->wsi);
+}
+
+/**
+ * This function is called by lib_uv
+ * This callback is called when a timer is finished being closed
+ */
+static void uv_timer_close_complete(uv_handle_t* handle)
+{
+	// Make it explicit that the entire struct is being freed
+	free((struct TimerHolder*)(handle));
 }
 
 /**
@@ -155,9 +160,18 @@ callback_gambezi(struct lws *wsi,
 			initActionQueue(psd->actions);
 
 			// Create timer
+			psd->timer_holder = malloc(sizeof(struct TimerHolder));
+			if(!psd->timer_holder)
+			{
+				lwsl_err("ERROR: Unable to create timer holder");
+				lwsl_err("SHUTDOWN REQUESTED");
+				return -1;
+			}
+			psd->timer_holder->psd = psd;
+
 			uv_timer_init(lws_uv_getloop(vhd->context, 0),
-			              &(psd->timer));
-			uv_timer_start(&(psd->timer),
+			              (uv_timer_t*)(psd->timer_holder));
+			uv_timer_start((uv_timer_t*)(psd->timer_holder),
 			               uv_timeout_cb_update, DEFAULT_PERIOD, DEFAULT_PERIOD);
 			break;
 		}
@@ -167,7 +181,8 @@ callback_gambezi(struct lws *wsi,
 		case LWS_CALLBACK_CLOSED:
 		{
 			free(psd->actions);
-			uv_timer_stop(&(psd->timer));
+			uv_timer_stop((uv_timer_t*)(psd->timer_holder));
+			uv_close((uv_handle_t*)(psd->timer_holder), uv_timer_close_complete);
 			break;
 		}
 
@@ -299,7 +314,7 @@ callback_gambezi(struct lws *wsi,
 				{
 					uint16_t refresh_rate;
 					readRefreshRateSetPacket(data, &refresh_rate);
-					uv_timer_set_repeat(&(psd->timer), refresh_rate);
+					uv_timer_set_repeat((uv_timer_t*)(psd->timer_holder), refresh_rate);
 					break;
 				}
 				////////////////////////////////////////////////////////////

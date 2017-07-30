@@ -51,7 +51,7 @@ if(GIT_EXECUTABLE)
     message("Git commit hash: ${LWS_BUILD_HASH}")
 endif()
 
-set(CMAKE_C_FLAGS "-std=gnu11 -fPIC ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS "-ggdb -std=gnu11 -fPIC ${CMAKE_C_FLAGS}")
 
 source_group("Headers Private"   FILES ${PLUGIN_HDR})
 source_group("Sources"   FILES ${PLUGIN_SRCS})
