@@ -270,10 +270,22 @@ callback_gambezi(struct lws *wsi,
 					uint8_t get_children;
 					readIDRequestPacket(data, &parent_key, &name, &get_children);
 
-					// Get node with matching name and parent key
-					struct Node* node = node_get_with_id(vhd->root_node,
-					                                     parent_key,
-					                                     name);
+					struct Node* node = 0;
+					// Different behavior if get_children flag is set
+					if(!get_children)
+					{
+						// Get node with matching name and parent key
+						node = node_get_with_id(vhd->root_node,
+						                        parent_key,
+						                        name);
+					}
+					else
+					{
+						// Get the node with the given key
+						node = node_traverse(vhd->root_node,
+						                     parent_key);
+					}
+
 					// No error
 					if(node)
 					{

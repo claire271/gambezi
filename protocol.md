@@ -7,6 +7,8 @@ tigerrun1998@gmail.com
 ## Introduction
 This protocol is designed to be a cross platform way to communicate between different programs or sections of code.
 
+The default refresh rate of clients is 100ms. All nodes default to staring as unsubscribed.
+
 
 
 ## Requirements
@@ -74,6 +76,8 @@ Keys can be up to 255 bytes long (excluding the length byte).
 | Header       | Header belonging to this packet type |
 | Key          | Key of the parent node               |
 | Name         | Name of this node                    |
+#### Notes
+If the flag is set to get all child nodes, the name is ignored and the parent key becomes the key to retrieve all children for.
 
 
 ### Set Node Value
