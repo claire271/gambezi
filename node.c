@@ -222,7 +222,7 @@ int node_queue(struct Node* node, struct session_data* psd, uint8_t recursive)
  * Queues a node to have its ID and name written to a client
  * May be recursive if desired
  */
-int node_queue_id(struct Node* node, struct session_data* psd, uint8_t recursive)
+int node_queue_id(struct Node* node, struct session_data* psd, uint8_t recursive, uint8_t multilevel)
 {
 	int code = 0;
 	// Queue and generate the response
@@ -246,7 +246,7 @@ int node_queue_id(struct Node* node, struct session_data* psd, uint8_t recursive
 					break;
 				}
 				// Queue child
-				int code2 = node_queue_id(node->children[i], psd, recursive);
+				int code2 = node_queue_id(node->children[i], psd, recursive && multilevel, multilevel);
 				// Handle no more actions
 				if(code2 > 0)
 				{

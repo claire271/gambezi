@@ -15,7 +15,7 @@
 #define PACKET_RETURN_KEY_VALUE 1
 #define PACKET_RETURN_ERROR 2
 
-void readIDRequestPacket(uint8_t* data, uint8_t** parent_key, uint8_t** name, uint8_t* get_children);
+void readIDRequestPacket(uint8_t* data, uint8_t** parent_key, uint8_t** name, uint8_t* get_children, uint8_t* get_children_all);
 int writeIDResponsePacket(uint8_t* buffer, int limit, struct Node* node);
 
 void readRefreshRateSetPacket(uint8_t* data, uint16_t* refresh_rate);

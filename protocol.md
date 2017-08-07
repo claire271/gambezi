@@ -67,9 +67,9 @@ Keys can be up to 255 bytes long (excluding the length byte).
 | 0    | 0x00     | Signifies this type of packet  |
 | 1    | *flags*  | Flags related to subscriptions |
 ##### Flags
-| Bit      | 7 - 1      | 0                          |
-|----------|------------|----------------------------|
-| Function | *reserved* | Set to get all child nodes |
+| Bit      | 7 - 2      | 1                                   | 0                      |
+|----------|------------|-------------------------------------|------------------------|
+| Function | *reserved* | Set to recursively get all children | Set to get child nodes |
 #### Sections
 | Section Type | Description                          |
 |--------------|--------------------------------------|
@@ -77,8 +77,11 @@ Keys can be up to 255 bytes long (excluding the length byte).
 | Key          | Key of the parent node               |
 | Name         | Name of this node                    |
 #### Notes
-If the flag is set to get all child nodes, the name is ignored and the parent key becomes the key to retrieve all children for.
+If the flag is set to get child nodes, the name is ignored and the parent key becomes the key to retrieve all children for.
 
+If the flag at bit 0 is set and the flat at bit 1 is cleared, only the immediate children will be retrieved.
+
+If the flag at bit 0 is set and the flat at bit 1 is set, all children will be retrieved recursively.
 
 ### Set Node Value
 #### Header

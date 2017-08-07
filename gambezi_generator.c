@@ -3,11 +3,12 @@
 #include "node.h"
 #include "gambezi_generator.h"
 
-void readIDRequestPacket(uint8_t* data, uint8_t** parent_key, uint8_t** name, uint8_t* get_children)
+void readIDRequestPacket(uint8_t* data, uint8_t** parent_key, uint8_t** name, uint8_t* get_children, uint8_t* get_children_all)
 {
 	(*parent_key) = data + 2;
 	(*name) = data + (*parent_key)[0] + 3;
-	(*get_children) = !!(data[1] & (0x01 << 0));
+	(*get_children) = !!(data[1] & 0x01);
+	(*get_children_all) = !!(data[1] & 0x02);
 }
 
 int writeIDResponsePacket(uint8_t* buffer, int limit, struct Node* node)

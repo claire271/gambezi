@@ -268,7 +268,13 @@ callback_gambezi(struct lws *wsi,
 					uint8_t* parent_key;
 					uint8_t* name;
 					uint8_t get_children;
-					readIDRequestPacket(data, &parent_key, &name, &get_children);
+					uint8_t get_children_all;
+					readIDRequestPacket(
+						data,
+						&parent_key,
+						&name,
+						&get_children,
+						&get_children_all);
 
 					struct Node* node = 0;
 					// Different behavior if get_children flag is set
@@ -289,7 +295,7 @@ callback_gambezi(struct lws *wsi,
 					// No error
 					if(node)
 					{
-						int code = node_queue_id(node, psd, get_children);
+						int code = node_queue_id(node, psd, get_children, get_children_all);
 						// No error
 						if(!code)
 						{

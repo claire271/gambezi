@@ -51,7 +51,7 @@ int node_queue(struct Node* node, struct session_data* psd, uint8_t recursive);
  * Queues a node to have its ID and name written to a client
  * May be recursive if desired
  */
-int node_queue_id(struct Node* node, struct session_data* psd, uint8_t recursive);
+int node_queue_id(struct Node* node, struct session_data* psd, uint8_t recursive, uint8_t multilevel);
 
 /**
  * Adds a subscriber to the given node
