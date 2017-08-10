@@ -185,8 +185,10 @@ int node_queue(struct Node* node, struct session_data* psd, uint8_t recursive)
 	// No error
 	if(action)
 	{
-		action->type = DataReturnRequest;
-		action->action.dataReturnRequest.node = node;
+		action->type = PregeneratedRequest;
+		memcpy(action->action.pregeneratedRequest.buffer + LWS_PRE,
+		       node->buffer, node->current_length);
+		action->action.pregeneratedRequest.length = node->current_length;
 
 		// Manage children if recursive
 		if(recursive)
