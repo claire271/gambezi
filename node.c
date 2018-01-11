@@ -186,7 +186,7 @@ int node_queue(struct Node* node, struct session_data* psd, uint8_t recursive)
 	if(action)
 	{
 		// Node data fits in the pregenerated packet
-		if(node->current_length > PREGEN_BUFFER_LENGTH)
+		if(node->current_length <= PREGEN_BUFFER_LENGTH)
 		{
 			action->type = PregeneratedRequest;
 			memcpy(action->action.pregeneratedRequest.buffer + LWS_PRE,
