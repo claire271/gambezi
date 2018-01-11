@@ -185,29 +185,38 @@ int node_queue(struct Node* node, struct session_data* psd, uint8_t recursive)
 	// No error
 	if(action)
 	{
-		action->type = PregeneratedRequest;
-		memcpy(action->action.pregeneratedRequest.buffer + LWS_PRE,
-		       node->buffer, node->current_length);
-		action->action.pregeneratedRequest.length = node->current_length;
-
-		// Manage children if recursive
-		if(recursive)
+		// Node data fits in the pregenerated packet
+		if(node->current_length > PREGEN_BUFFER_LENGTH)
 		{
-			for(int i = 0;i < MAX_CHILDREN;i++)
+			action->type = PregeneratedRequest;
+			memcpy(action->action.pregeneratedRequest.buffer + LWS_PRE,
+				   node->buffer, node->current_length);
+			action->action.pregeneratedRequest.length = node->current_length;
+
+			// Manage children if recursive
+			if(recursive)
 			{
-				// No more children to check
-				if(!(node->children[i]))
+				for(int i = 0;i < MAX_CHILDREN;i++)
 				{
-					break;
-				}
-				// Queue child
-				int code2 = node_queue(node->children[i], psd, recursive);
-				// Handle no more actions
-				if(code2)
-				{
-					code = 1;
+					// No more children to check
+					if(!(node->children[i]))
+					{
+						break;
+					}
+					// Queue child
+					int code2 = node_queue(node->children[i], psd, recursive);
+					// Handle no more actions
+					if(code2)
+					{
+						code = 1;
+					}
 				}
 			}
+		}
+		// Node data too long
+		else
+		{
+			lwsl_notice("NOTICE: Node data too long.");
 		}
 	}
 	// Too many actions
